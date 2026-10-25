@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет — AffitAC</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="nav">
+        <h2>AffitAC</h2>
+        <div>
+            <a href="index.html">Главная</a>
+            <a href="#" onclick="logout()">Выйти</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Личный кабинет</h1>
+        <p id="user-info" class="muted" style="margin-bottom:30px;"></p>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:30px;">
+            <div class="card">
+                <h3>Смена пароля</h3>
+                <input type="password" id="new-password" placeholder="Новый пароль">
+                <button class="btn btn-primary" style="width:100%;" onclick="changePassword()">Сменить пароль</button>
+            </div>
+
+            <div class="card">
+                <h3>Скачать клиент</h3>
+                <p class="muted" style="margin-bottom:16px;">Ваш тариф: <strong id="plan-name" style="color:#38bdf8;">Free</strong></p>
+                <a id="download-btn" href="downloads/AffitAC-Free.jar" class="btn btn-free" style="width:100%;">
+                    Скачать Free
+                </a>
+            </div>
+        </div>
+
+        <div id="license-section" class="card" style="margin-top:30px; display:none;">
+            <h3>Ваша лицензия Pro</h3>
+            <p class="muted">Ключ:</p>
+            <code id="license-key">—</code>
+            <p class="muted" style="margin-top:12px;">
+                Действует до: <span id="license-expires" style="color:#38bdf8;">—</span>
+            </p>
+        </div>
+
+        <div id="admin-btn" style="margin-top:30px; display:none;">
+            <a href="admin.html" class="btn btn-danger">⚙️ Админ-панель</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script>
+        (async () => {
+            const { data: { session } } = await db.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+
+            const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
+            document.getElementById('user-info').textContent = `Вы вошли как ${profile.username || session.user.email}`;
+
+            const planName = document.getElementById('plan-name');
+            const downloadBtn = document.getElementById('download-btn');
+
+            if (profile.plan === 'pro') {
+                planName.textContent = 'Pro';
+                downloadBtn.textContent = 'Скачать Pro';
+                downloadBtn.className = 'btn btn-pro';
+                downloadBtn.style.width = '100%';
+                downloadBtn.href = 'downloads/AffitAC-Pro.jar';
+
+                document.getElementById('license-section').style.display = 'block';
+                document.getElementById('license-key').textContent = profile.license_key || '—';
+                document.getElementById('license-expires').textContent =
+                    profile.license_expires_at
+                        ? new Date(profile.license_expires_at).toLocaleDateString('ru-RU')
+                        : '—';
+            }
+
+            if (profile.role === 'admin' || profile.username === 'bdfka') {
+                document.getElementById('admin-btn').style.display = 'block';
+            }
+        })();
+
+        async function changePassword() {
+            const newPass = document.getElementById('new-password').value;
+            if (newPass.length < 6) { alert('Пароль должен быть не менее 6 символов'); return; }
+            const { error } = await db.auth.updateUser({ password: newPass });
+            if (error) alert('Ошибка: ' + error.message);
+            else alert('Пароль изменён!');
+        }
+
+        async function logout() {
+            await db.auth.signOut();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>

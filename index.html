@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AffitAC — Античит нового поколения</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="nav">
+        <h2>AffitAC</h2>
+        <div>
+            <a href="login.html">Вход</a>
+            <a href="register.html" class="btn btn-primary" style="padding:8px 18px;">Регистрация</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>AffitAC</h1>
+        <p class="muted" style="font-size:1.2rem; margin-bottom:40px;">
+            Продвинутый античит для Minecraft с 300+ проверками, GUI-настройками и VK-уведомлениями.
+        </p>
+
+        <h2>Тарифы</h2>
+        <div class="pricing-grid">
+            <div class="card">
+                <h3>Free</h3>
+                <div class="price">0 ₽</div>
+                <ul class="features">
+                    <li>✅ Базовые проверки (145+)</li>
+                    <li>✅ VK-уведомления</li>
+                    <li>✅ Защита спавна</li>
+                    <li>✅ GUI управления игроками</li>
+                    <li>❌ Extra-проверки (100+)</li>
+                    <li>❌ Pro-лицензия</li>
+                </ul>
+                <a href="register.html" class="btn btn-free" style="width:100%;">Начать бесплатно</a>
+            </div>
+
+            <div class="card" style="border-color:#38bdf8;">
+                <h3>Pro</h3>
+                <div class="price">299 ₽/мес</div>
+                <ul class="features">
+                    <li>✅ Всё из Free</li>
+                    <li>✅ Extra-проверки (100+)</li>
+                    <li>✅ Лицензионный ключ</li>
+                    <li>✅ Приоритетная поддержка</li>
+                    <li>✅ Обновления первыми</li>
+                </ul>
+                <a href="register.html" class="btn btn-pro" style="width:100%;">Купить Pro</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script>
+        (async () => {
+            const { data: { session } } = await db.auth.getSession();
+            if (session) {
+                const { data: profile } = await db.from('profiles').select('plan').eq('id', session.user.id).single();
+                if (profile?.plan === 'pro') {
+                    document.querySelector('.pricing-grid .card:last-child')
+                        .insertAdjacentHTML('beforeend', '<p style="color:#38bdf8; margin-top:12px;">✅ У вас активен Pro</p>');
+                }
+            }
+        })();
+    </script>
+</body>
+</html>

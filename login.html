@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход — AffitAC</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container" style="max-width:420px; margin-top:100px;">
+        <div class="card">
+            <h2>Вход</h2>
+            <p class="muted" style="margin-bottom:20px;">Войдите в свой аккаунт</p>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Пароль">
+            <button class="btn btn-primary" style="width:100%;" onclick="login()">Войти</button>
+            <p style="margin-top:16px; text-align:center;" class="muted">
+                Нет аккаунта? <a href="register.html" class="link">Регистрация</a>
+            </p>
+            <p style="text-align:center; margin-top:8px;">
+                <a href="index.html" class="link" style="font-size:0.9rem;">← На главную</a>
+            </p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script>
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            if (!email || !password) { alert('Заполните все поля'); return; }
+
+            const { data, error } = await db.auth.signInWithPassword({ email, password });
+            if (error) { alert('Ошибка: ' + error.message); return; }
+            window.location.href = 'dashboard.html';
+        }
+
+        document.getElementById('password').addEventListener('keydown', e => {
+            if (e.key === 'Enter') login();
+        });
+    </script>
+</body>
+</html>

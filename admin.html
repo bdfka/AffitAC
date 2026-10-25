@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель — AffitAC</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="nav">
+        <h2>AffitAC Admin</h2>
+        <div>
+            <a href="dashboard.html">Личный кабинет</a>
+            <a href="#" onclick="logout()">Выйти</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Выдача Pro-лицензий</h1>
+
+        <div class="card">
+            <h3>Выдать Pro</h3>
+            <input type="text" id="target-username" placeholder="Никнейм пользователя">
+            <input type="number" id="days" placeholder="Дней Pro" value="30" min="1">
+            <button class="btn btn-primary" style="width:100%;" onclick="grantPro()">Выдать Pro</button>
+        </div>
+
+        <div id="users-list" style="margin-top:30px;"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script>
+        (async () => {
+            const { data: { session } } = await db.auth.getSession();
+            if (!session) { window.location.href = 'login.html'; return; }
+
+            const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
+            if (profile.username !== 'bdfka' && profile.role !== 'admin') {
+                alert('Доступ запрещён.');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+            loadUsers();
+        })();
+
+        async function loadUsers() {
+            const { data: users } = await db.from('profiles')
+                .select('username, plan, license_key, license_expires_at')
+                .order('username');
+
+            const list = document.getElementById('users-list');
+            list.innerHTML = '<h2>Пользователи</h2>';
+            users.forEach(u => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.marginBottom = '12px';
+                card.style.padding = '20px';
+
+                const expires = u.license_expires_at
+                    ? new Date(u.license_expires_at).toLocaleDateString('ru-RU')
+                    : '—';
+
+                card.innerHTML = `
+                    <strong style="color:#7dd3fc; font-size:1.1rem;">${u.username || '—'}</strong>
+                    <span style="float:right; color:${u.plan === 'pro' ? '#38bdf8' : '#94a3b8'};">
+                        ${u.plan === 'pro' ? 'PRO' : 'FREE'}
+                    </span>
+                    <p class="muted" style="margin-top:8px;">Истекает: ${expires}</p>
+                    ${u.license_key ? `<p class="muted" style="font-size:0.85rem;">Ключ: ${u.license_key}</p>` : ''}
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        async function grantPro() {
+            const username = document.getElementById('target-username').value.trim();
+            const days = parseInt(document.getElementById('days').value) || 30;
+
+            if (!username) { alert('Введите никнейм'); return; }
+
+            const expires = new Date(Date.now() + days * 86400000).toISOString();
+            const key = 'AFFIT-' + crypto.randomUUID().toUpperCase();
+
+            const { error } = await db.from('profiles')
+                .update({
+                    plan: 'pro',
+                    license_key: key,
+                    license_expires_at: expires
+                })
+                .eq('username', username);
+
+            if (error) { alert('Ошибка: ' + error.message); return; }
+            alert(`Pro выдан ${username} на ${days} дней.\n\nКлюч:\n${key}`);
+            loadUsers();
+        }
+
+        async function logout() {
+            await db.auth.signOut();
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
